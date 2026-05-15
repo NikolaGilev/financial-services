@@ -197,21 +197,21 @@ Both do direct file/registry writes — **not** `office-addin-dev-settings`.
   [Force a client-side refresh](#force-a-client-side-refresh)
 
 ```bash
-# macOS — dry-run, then install:
+# macOS — installs directly:
 ./scripts/sideload-addin.sh ~/path/to/manifest.xml
-./scripts/sideload-addin.sh ~/path/to/manifest.xml --apply
 ```
 
 ```powershell
-# Windows — dry-run, then install:
+# Windows — installs directly:
 .\scripts\sideload-addin.ps1 C:\path\to\manifest.xml
-.\scripts\sideload-addin.ps1 C:\path\to\manifest.xml -Apply
 ```
 
-**Dry-run by default** — nothing is written without `--apply` / `-Apply`.
-The install names the entry by the add-in `<Id>`, so removal later is the
-exact inverse: `clear-addin-cache.{sh,ps1} --id <GUID> --apply` (the script
-prints the precise remove command on completion).
+Sideloading is additive and idempotent, so it installs directly — **no
+dry-run** (unlike the destructive `clear-addin-cache`, which stays dry-run
+by default). The install names the entry by the add-in `<Id>`, so removal
+later is the exact inverse: `clear-addin-cache.{sh,ps1} --id <GUID>
+--apply` (the sideload script prints the precise remove command on
+completion).
 
 Then **fully quit and reopen** Excel / Word / PowerPoint — check Task
 Manager (Windows) / `pkill -f "Microsoft Excel"` (macOS) first; a

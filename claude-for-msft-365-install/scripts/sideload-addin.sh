@@ -7,24 +7,25 @@
 #
 # This does direct file copies — it does NOT use office-addin-dev-settings.
 #
+# Sideloading is additive and idempotent — it installs directly (no
+# dry-run). Reverse it any time with clear-addin-cache.sh --id <GUID> --apply.
+#
 # Usage:
-#   sideload-addin.sh /path/to/manifest.xml          # dry-run: show what would happen
-#   sideload-addin.sh /path/to/manifest.xml --apply  # actually install
+#   sideload-addin.sh /path/to/manifest.xml
 set -euo pipefail
 
 APPS=(Excel Word Powerpoint)
 wef_dir() { echo "$HOME/Library/Containers/com.microsoft.$1/Data/Documents/wef"; }
 
-MANIFEST="" APPLY=0
+MANIFEST=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --apply) APPLY=1; shift ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) MANIFEST="$1"; shift ;;
   esac
 done
 
-[ -n "$MANIFEST" ] || { echo "usage: sideload-addin.sh /path/to/manifest.xml [--apply]" >&2; exit 1; }
+[ -n "$MANIFEST" ] || { echo "usage: sideload-addin.sh /path/to/manifest.xml" >&2; exit 1; }
 [ -f "$MANIFEST" ] || { echo "ERROR: manifest not found: $MANIFEST" >&2; exit 1; }
 
 ADDIN_ID="$(xmllint --xpath 'string(/*[local-name()="OfficeApp"]/*[local-name()="Id"])' "$MANIFEST" 2>/dev/null \
@@ -32,18 +33,13 @@ ADDIN_ID="$(xmllint --xpath 'string(/*[local-name()="OfficeApp"]/*[local-name()=
 [ -n "$ADDIN_ID" ] || { echo "ERROR: could not read <Id> from manifest" >&2; exit 1; }
 
 DEST_NAME="$ADDIN_ID.manifest.xml"
-[ "$APPLY" -eq 1 ] && echo "Sideloading add-in $ADDIN_ID" \
-                    || echo "DRY RUN -- would sideload (re-run with --apply to install):"
+echo "Sideloading add-in $ADDIN_ID"
 
 for app in "${APPS[@]}"; do
   d="$(wef_dir "$app")"
-  if [ "$APPLY" -eq 1 ]; then
-    mkdir -p "$d"
-    cp "$MANIFEST" "$d/$DEST_NAME"
-    echo "  installed $d/$DEST_NAME"
-  else
-    echo "  would copy $MANIFEST -> $d/$DEST_NAME"
-  fi
+  mkdir -p "$d"
+  cp "$MANIFEST" "$d/$DEST_NAME"
+  echo "  installed $d/$DEST_NAME"
 done
 
 echo "Quit and reopen Excel/Word/PowerPoint. The add-in appears under"
